@@ -1,19 +1,20 @@
 import React, { useState } from "react";
+import Autocomplete from "./Autocomplete";
 
 function App() {
-  const [team, setTeam] = useState([]);
-  const [inputPlayer, setInputPlayer] = useState("");
+  const [team, setTeam] = useState<{ id: number; name: string }[]>([]);
   const [prediction, setPrediction] = useState(null);
 
-  const handleAddPlayer = () => {
-    if (inputPlayer.trim() !== "") {
-      setTeam((prevTeam) => [...prevTeam, inputPlayer.trim()]);
-      setInputPlayer("");
+  const handleAddPlayer = (player: { id: number; name: string }) => {
+    if (team.some((p) => p.id === player.id)) {
+      alert("Player is already in the team!");
+      return;
     }
+    setTeam((prevTeam) => [...prevTeam, player]);
   };
 
-  const handleRemovePlayer = (player) => {
-    setTeam((prevTeam) => prevTeam.filter((p) => p !== player));
+  const handleRemovePlayer = (playerId: number) => {
+    setTeam((prevTeam) => prevTeam.filter((p) => p.id !== playerId));
   };
 
   const handleSubmit = async () => {
@@ -42,25 +43,19 @@ function App() {
       <h1>FPL Threat Predictor</h1>
       <div>
         <h3>Input Your Current Team</h3>
-        <input
-          type="text"
-          placeholder="Enter player name"
-          value={inputPlayer}
-          onChange={(e) => setInputPlayer(e.target.value)}
-          style={{ marginRight: "1rem", padding: "0.5rem" }}
+        <Autocomplete
+          placeholder="Search for a player"
+          onPlayerSelect={handleAddPlayer} // Pass selected player to add to the team
         />
-        <button onClick={handleAddPlayer} style={{ padding: "0.5rem 1rem" }}>
-          Add Player
-        </button>
       </div>
       <div style={{ marginTop: "1rem" }}>
         <h4>Your Current Team:</h4>
         <ul>
-          {team.map((player, index) => (
-            <li key={index} style={{ marginBottom: "0.5rem" }}>
-              {player}{" "}
+          {team.map((player) => (
+            <li key={player.id} style={{ marginBottom: "0.5rem" }}>
+              {player.name}{" "}
               <button
-                onClick={() => handleRemovePlayer(player)}
+                onClick={() => handleRemovePlayer(player.id)}
                 style={{
                   marginLeft: "1rem",
                   padding: "0.2rem 0.5rem",
