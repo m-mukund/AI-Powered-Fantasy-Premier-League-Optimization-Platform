@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 
 conn_string = 'postgresql://postgres:mukund@localhost/postgres'
 players_url="https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/refs/heads/master/data/2024-25/players_raw.csv"
+gws_url="https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/refs/heads/master/data/2024-25/gws/merged_gw.csv"
 
 db = create_engine(conn_string) 
 conn = db.connect() 
@@ -12,8 +13,15 @@ conn = db.connect()
 
 # our dataframe 
 players_df=pd.read_csv(players_url)
-players_df=players_df[['id', 'web_name']]
+players_df=players_df[['id', 'first_name', 'second_name', 'web_name', 'now_cost']]
 
+df=pd.read_csv(gws_url)
+df[['first_name', 'second_name']] = df['name'].str.split(' ', n=1, expand=True)
+df=df[['first_name', 'second_name', 'position']]
+
+# Merging df2 to get team name
+players_df=pd.merge(df, players_df, on=['first_name', 'second_name'], how='inner')
+players_df=players_df.drop(['first_name', 'second_name'], axis=1)
 
 players_df.to_sql('players', con=conn, if_exists='replace', 
 		index=False) 
@@ -29,3 +37,11 @@ for i in cursor.fetchall():
 
 # conn.commit() 
 conn.close() 
+
+
+# CREATE TABLE player_expected_points (
+#     player_id INT,              -- Player ID
+#     gameweek INT,               -- Gameweek number
+#     expected_points NUMERIC,    -- Expected points for this gameweek
+#     PRIMARY KEY (player_id, gameweek)
+# );
