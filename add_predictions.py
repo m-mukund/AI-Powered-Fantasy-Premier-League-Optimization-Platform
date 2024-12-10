@@ -52,7 +52,11 @@ cursor.execute(sql1)
 for position, player_id, web_name, cost in cursor.fetchall(): 
     player_df=fetch_data_new1(gw_url, players_url, fixtures_url, teams_url, gw, player_id, web_name)
     player_df=player_df.drop(['name_x', 'total_points', 'web_name', 'fixture'], axis=1)
-    prediction=pred_model.predict(player_df.tail(1))
+    if player_df.tail(1).isnull().values.any():
+        print("The DataFrame contains null values.")
+        prediction=[0.0]
+    else:
+        prediction=pred_model.predict(player_df.tail(1))
     print(web_name)
     print(prediction)
 

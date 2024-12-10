@@ -39,7 +39,6 @@ def fetch_data_new1(url, players_url, fix_url, teams_url, gw, player_id, web_nam
     .apply(lambda x: x.shift(1).rolling(window=5, min_periods=1).mean())
     .reset_index(level=0, drop=True)  # Ensure the index matches the original DataFrame
     )
-    print(df[['name', 'bonus']].tail(6))
     # Create a copy of the row of previous GW for a specific player
     gw_row = df[(df['GW'] == (df['GW'].max()))].copy()
     gw_row['GW']=gw

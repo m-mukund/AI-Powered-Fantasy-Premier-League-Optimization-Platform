@@ -6,10 +6,22 @@ interface Player {
   name: string;
 }
 
+interface OptimalTransfer {
+  outgoing_player: { id: number; name: string };
+  incoming_player: {
+    player_id: number;
+    position: string;
+    cost: number;
+    points: number;
+  };
+  improvement: number;
+}
+
+
 function App() {
   const [team, setTeam] = useState<Player[]>([]);
   const [remainingBudget, setRemainingBudget] = useState<string>(""); // Store user-entered budget
-  const [prediction, setPrediction] = useState(null);
+  const [optimalTransfer, setOptimalTransfer] = useState(null);
 
   const handleAddPlayer = (player: Player) => {
     if (team.some((p) => p.id === player.id)) {
@@ -42,13 +54,30 @@ function App() {
       const response = await fetch("http://127.0.0.1:8000/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ team, remaining_budget: parseFloat(remainingBudget) }),
+        body: JSON.stringify({
+          current_team: team,
+          remaining_budget: parseFloat(remainingBudget),
+        }),
       });
       const data = await response.json();
-      setPrediction(data);
+      if (data.success) {
+        setOptimalTransfer({
+          outgoing_player: data.optimal_transfer.outgoing_player,
+          incoming_player: {
+            player_id: data.optimal_transfer.incoming_player.player_id,
+            web_name: data.optimal_transfer.incoming_player.web_name,
+            position: data.optimal_transfer.incoming_player.position,
+            cost: Number(data.optimal_transfer.incoming_player.cost),
+            points: Number(data.optimal_transfer.incoming_player.points),
+          },
+          improvement: Number(data.optimal_transfer.improvement),
+        });
+      } else {
+        alert(`Error: ${data.error}`);
+      }
     } catch (error) {
-      console.error("Error during prediction:", error);
-      alert("An error occurred while fetching predictions.");
+      console.error("Error fetching optimal transfer:", error);
+      alert("An error occurred while fetching the optimal transfer.");
     }
   };
 
@@ -117,12 +146,25 @@ function App() {
       >
         Predict Threat
       </button>
-      {prediction && (
-        <div style={{ marginTop: "2rem" }}>
-          <h3>Prediction Results:</h3>
-          <pre>{JSON.stringify(prediction, null, 2)}</pre>
-        </div>
-      )}
+      {optimalTransfer && (
+  <div style={{ marginTop: "2rem" }}>
+    <h3>Optimal Transfer:</h3>
+      <p>
+        <strong>Outgoing Player:</strong> {optimalTransfer.outgoing_player.name}
+      </p>
+      <p>
+        <strong>Incoming Player:</strong> {optimalTransfer.incoming_player.position}{" "}
+        {optimalTransfer.incoming_player.web_name} costing £
+        {optimalTransfer.incoming_player.cost.toFixed(2)/10} with{" "}
+        {optimalTransfer.incoming_player.points.toFixed(2)} points.
+      </p>
+      <p>
+        <strong>Improvement:</strong>{" "}
+        {optimalTransfer.improvement.toFixed(2)} points
+      </p>
+    </div>
+  )}
+
     </div>
   );
 }

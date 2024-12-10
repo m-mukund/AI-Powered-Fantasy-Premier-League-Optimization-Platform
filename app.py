@@ -46,9 +46,11 @@ def get_optimal_transfer_with_constraints(current_team, gameweek, remaining_budg
         
         optimal_transfer = None
         max_improvement = float("-inf")
+        print(current_team)
         
         # Loop through each player in the team
         for player in current_team:
+            print("in loop")
             player_id = player["id"]
             
             # Fetch player details from the expected_points table
@@ -73,16 +75,18 @@ def get_optimal_transfer_with_constraints(current_team, gameweek, remaining_budg
             # Query to find the best replacement
             query = """
             SELECT 
-                player_id, 
-                position, 
-                cost, 
-                expected_points AS points
-            FROM expected_points
+                ep.player_id, 
+                ep.position, 
+                ep.cost, 
+                ep.expected_points AS points,
+                p.web_name
+            FROM expected_points ep
+            JOIN players p ON ep.player_id = p.id
             WHERE 
-                position = %(position)s
-                AND player_id NOT IN %(current_team_ids)s
-                AND cost <= %(max_budget)s
-                AND gameweek = %(gameweek)s
+                ep.position = %(position)s
+                AND ep.player_id NOT IN %(current_team_ids)s
+                AND ep.cost <= %(max_budget)s
+                AND ep.gameweek = %(gameweek)s
             ORDER BY points DESC
             LIMIT 1;
             """
@@ -148,20 +152,23 @@ def predict():
     data=request.get_json()
     print("Team recieved")
     print(data)
-    team=data.get("team")
+    team=data.get("current_team")
     remaining_budget=data.get("remaining_budget")
+    print("After")
 
     fpl_url="https://fantasy.premierleague.com/api/bootstrap-static/"
     fpl_data=requests.get(fpl_url)
     fpl_json=fpl_data.json()
 
     gw=get_gameweek(fpl_json["events"])["id"]
+    print("GW obtained")
 
     if not gw:
         return jsonify({"Could not get GW": str(e)}), 500
     
     try:
         optimal_transfer=get_optimal_transfer_with_constraints(team, gw, remaining_budget)
+        print(optimal_transfer)
         return jsonify({"success": True, "optimal_transfer": optimal_transfer}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
