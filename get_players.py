@@ -45,3 +45,12 @@ conn.close()
 #     expected_points NUMERIC,    -- Expected points for this gameweek
 #     PRIMARY KEY (player_id, gameweek)
 # );
+
+# CREATE TABLE expected_points (
+#     player_id INT NOT NULL,         -- Unique identifier for the player
+#     position VARCHAR(50) NOT NULL, -- Position of the player (e.g., Forward, Midfielder)
+#     cost DECIMAL(10, 2) NOT NULL,  -- Cost of the player in the game, with two decimal places
+#     expected_points DECIMAL(10, 2) NOT NULL, -- Expected points for the player
+#     gameweek INT NOT NULL,         -- Gameweek number
+#     PRIMARY KEY (player_id, gameweek) -- Ensures unique entries for a player per gameweek
+# );

@@ -5,7 +5,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from flask_cors import CORS
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import requests
 
 app = Flask(__name__)
@@ -50,9 +50,22 @@ def get_optimal_transfer_with_constraints(current_team, gameweek, remaining_budg
         # Loop through each player in the team
         for player in current_team:
             player_id = player["id"]
-            player_position = player["position"]
-            player_cost = player["cost"]
-            player_points = player["expected_points"][gameweek]
+            
+            # Fetch player details from the expected_points table
+            sql1 = '''
+            SELECT position, cost, expected_points 
+            FROM expected_points 
+            WHERE player_id = %(player_id)s AND gameweek = %(gameweek)s;
+            '''
+            cursor.execute(sql1, {"player_id": player_id, "gameweek": gameweek})
+            result = cursor.fetchone()
+            
+            if not result:
+                continue  # Skip if the player doesn't have data for the given gameweek
+            
+            player_position = result["position"]
+            player_cost = result["cost"]
+            player_points = result["expected_points"]
             
             # Calculate the maximum budget available for a replacement
             max_budget = remaining_budget + player_cost
@@ -61,23 +74,23 @@ def get_optimal_transfer_with_constraints(current_team, gameweek, remaining_budg
             query = """
             SELECT 
                 player_id, 
-                name, 
                 position, 
                 cost, 
-                expected_points[%(gameweek)s] AS points
-            FROM player_expected_points
+                expected_points AS points
+            FROM expected_points
             WHERE 
                 position = %(position)s
                 AND player_id NOT IN %(current_team_ids)s
                 AND cost <= %(max_budget)s
+                AND gameweek = %(gameweek)s
             ORDER BY points DESC
             LIMIT 1;
             """
             cursor.execute(query, {
-                "gameweek": gameweek,
                 "position": player_position,
                 "current_team_ids": tuple(p["id"] for p in current_team),
-                "max_budget": max_budget
+                "max_budget": max_budget,
+                "gameweek": gameweek
             })
             
             replacement = cursor.fetchone()
@@ -101,7 +114,6 @@ def get_optimal_transfer_with_constraints(current_team, gameweek, remaining_budg
     except Exception as e:
         print(f"Error: {e}")
         return None
-
 
 @app.route('/autocomplete', methods=['GET'])
 def autocomplete():
@@ -135,6 +147,9 @@ def autocomplete():
 def predict():
     data=request.get_json()
     print("Team recieved")
+    print(data)
+    team=data.get("team")
+    remaining_budget=data.get("remaining_budget")
 
     fpl_url="https://fantasy.premierleague.com/api/bootstrap-static/"
     fpl_data=requests.get(fpl_url)
@@ -145,17 +160,9 @@ def predict():
     if not gw:
         return jsonify({"Could not get GW": str(e)}), 500
     
-
-
-    file = request.files["file"]
     try:
-        # Read uploaded CSV
-        data = pd.read_csv(file)
-        # Assume preprocessing function already exists
-        processed_data = preprocess(data)  # Implement this as needed
-        predictions = model.predict(processed_data)
-        data["Predicted_Threat"] = predictions
-        return jsonify(data.to_dict(orient="records"))
+        optimal_transfer=get_optimal_transfer_with_constraints(team, gw, remaining_budget)
+        return jsonify({"success": True, "optimal_transfer": optimal_transfer}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
