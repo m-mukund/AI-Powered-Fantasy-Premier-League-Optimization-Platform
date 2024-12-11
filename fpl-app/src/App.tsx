@@ -7,21 +7,21 @@ interface Player {
 }
 
 interface OptimalTransfer {
-  outgoing_player: { id: number; name: string };
+  outgoing_player: Player;
   incoming_player: {
     player_id: number;
+    web_name: string;
     position: string;
-    cost: number;
+    cost: number; // Stored in pence
     points: number;
   };
   improvement: number;
 }
 
-
 function App() {
   const [team, setTeam] = useState<Player[]>([]);
-  const [remainingBudget, setRemainingBudget] = useState<string>(""); // Store user-entered budget
-  const [optimalTransfer, setOptimalTransfer] = useState(null);
+  const [remainingBudget, setRemainingBudget] = useState<string>("");
+  const [optimalTransfer, setOptimalTransfer] = useState<OptimalTransfer | null>(null);
 
   const handleAddPlayer = (player: Player) => {
     if (team.some((p) => p.id === player.id)) {
@@ -41,16 +41,15 @@ function App() {
 
   const handleSubmit = async () => {
     if (team.length === 0) {
-      alert("Please enter your exact team of 15 players");
+      alert("Please enter your exact team of 15 players.");
       return;
     }
     if (!remainingBudget || isNaN(Number(remainingBudget))) {
-      alert("Please enter a valid remaining budget");
+      alert("Please enter a valid remaining budget.");
       return;
     }
 
     try {
-      // Send team and budget to backend
       const response = await fetch("http://127.0.0.1:8000/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -59,6 +58,11 @@ function App() {
           remaining_budget: parseFloat(remainingBudget),
         }),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       if (data.success) {
         setOptimalTransfer({
@@ -88,7 +92,7 @@ function App() {
         <h3>Input Your Current Team</h3>
         <Autocomplete
           placeholder="Search for a player"
-          onPlayerSelect={handleAddPlayer} // Pass selected player to add to the team
+          onPlayerSelect={handleAddPlayer}
         />
       </div>
       <div style={{ marginTop: "1rem" }}>
@@ -147,24 +151,23 @@ function App() {
         Predict Threat
       </button>
       {optimalTransfer && (
-  <div style={{ marginTop: "2rem" }}>
-    <h3>Optimal Transfer:</h3>
-      <p>
-        <strong>Outgoing Player:</strong> {optimalTransfer.outgoing_player.name}
-      </p>
-      <p>
-        <strong>Incoming Player:</strong> {optimalTransfer.incoming_player.position}{" "}
-        {optimalTransfer.incoming_player.web_name} costing £
-        {optimalTransfer.incoming_player.cost.toFixed(2)/10} with{" "}
-        {optimalTransfer.incoming_player.points.toFixed(2)} points.
-      </p>
-      <p>
-        <strong>Improvement:</strong>{" "}
-        {optimalTransfer.improvement.toFixed(2)} points
-      </p>
-    </div>
-  )}
-
+        <div style={{ marginTop: "2rem" }}>
+          <h3>Optimal Transfer:</h3>
+          <p>
+            <strong>Outgoing Player:</strong> {optimalTransfer.outgoing_player.name}
+          </p>
+          <p>
+            <strong>Incoming Player:</strong> {optimalTransfer.incoming_player.position}{" "}
+            {optimalTransfer.incoming_player.web_name} costing £
+            {(optimalTransfer.incoming_player.cost / 10).toFixed(2)} with{" "}
+            {optimalTransfer.incoming_player.points.toFixed(2)} points.
+          </p>
+          <p>
+            <strong>Improvement:</strong>{" "}
+            {optimalTransfer.improvement.toFixed(2)} points
+          </p>
+        </div>
+      )}
     </div>
   );
 }
