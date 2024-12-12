@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-db-update
+  namespace: default  # Change this to your specific namespace
+spec:
+  schedule: "*/5 * * * *"  # Runs every 5 minutes
+  jobTemplate:
+    spec:
+      backoffLimit: 3  # Number of retries if job fails
+      template:
+        spec:
+          containers:
+          - name: postgres-updater
+            image: mukund0004/pushpred:v3 # Replace with your image
+            imagePullPolicy: Always
+            resources:
+              requests:
+                cpu: 500m
+                memory: 512Mi
+              limits:
+                cpu: 1
+                memory: 1Gi
+            
+          restartPolicy: OnFailure
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
