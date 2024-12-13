@@ -2,7 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
-  namespace: default
+  labels:
+    app: postgres
 spec:
   replicas: 1
   selector:
@@ -39,5 +40,4 @@ spec:
           mountPath: /var/lib/postgresql/data
       volumes:
       - name: postgres-data
-        persistentVolumeClaim:
-          claimName: postgres-pvc
+        emptyDir: {}

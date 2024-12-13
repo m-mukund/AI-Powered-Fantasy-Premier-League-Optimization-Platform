@@ -1,18 +1,19 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: postgres-db-update
+  name: cronjob-update
   namespace: default  # Change this to your specific namespace
 spec:
-  schedule: "*/5 * * * *"  # Runs every 5 minutes
+  schedule: "0 */3 * * *"  # Runs every 3 hours
   jobTemplate:
     spec:
-      backoffLimit: 3  # Number of retries if job fails
+      backoffLimit: 1  # Number of retries if job fails
       template:
         spec:
+          serviceAccountName: k8s-service-account
           containers:
           - name: postgres-updater
-            image: mukund0004/pushpred:v3 # Replace with your image
+            image: mukund0004/pushpred:v6 # Replace with your image
             imagePullPolicy: Always
             resources:
               requests:
@@ -23,5 +24,5 @@ spec:
                 memory: 1Gi
             
           restartPolicy: OnFailure
-  successfulJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3

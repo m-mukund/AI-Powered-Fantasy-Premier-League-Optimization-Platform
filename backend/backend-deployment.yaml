@@ -1,9 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend-deployment
+  name: backend
+  namespace: default
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: backend
@@ -12,15 +13,10 @@ spec:
       labels:
         app: backend
     spec:
+      serviceAccountName: k8s-service-account
       containers:
       - name: backend
-        image: mukund0004/backend:v1
+        image: mukund0004/backend:v14 # Replace with your backend image
+        imagePullPolicy: Always
         ports:
-        - containerPort: 8000
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 250m
-            memory: 256Mi
+        - containerPort: 8000 # Replace with your backend port
