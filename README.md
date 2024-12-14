@@ -45,6 +45,8 @@ Our platform addresses these challenges by:
 1. **Create GCP account and connect to it**
 
 2. **Create a GKE cluster in GCP**
+
+   
      Make sure that Workload Identity is enabled when creating the cluster.
 
 3. **Create a Google and Kubernete Service Accounts**
@@ -67,6 +69,8 @@ Our platform addresses these challenges by:
 4. **Clone this repo**\
    
 5. **Replace the service account with your own**
+
+   
      Replace the service account name given in cronjob/pushpreds-cronjob.yaml with your own.
 
 6. **Deploy Application**
