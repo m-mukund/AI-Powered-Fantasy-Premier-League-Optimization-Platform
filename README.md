@@ -42,24 +42,52 @@ Our platform addresses these challenges by:
 
 ### Installation
 
-1. **Install Docker Desktop**
-   ```bash
-   # Download from official Docker website
-   # Follow OS-specific installation instructions
-   ```
+1. **Create GCP account and connect to it**
 
-2. **Enable Kubernetes**
-   - Open Docker Desktop
-   - Navigate to Settings
-   - Select Kubernetes tab
-   - Enable Kubernetes
-   - Apply changes and restart
+2. **Create a GKE cluster in GCP**
+     Make sure that Workload Identity is enabled when creating the cluster.
 
-3. **Deploy Application**
+3. **Create a Google and Kubernete Service Accounts**
+     ```bash
+     # Create K8 service account
+     kubectl create serviceaccount my-app-service-account
+     # Create google service account
+     gcloud iam service-accounts create my-app-service-account \
+    --display-name "Service account for GKE"
+     # Grant permissions
+     gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+    --member "serviceAccount:my-app-service-account@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+    --role "roles/storage.objectViewer"
+     # Link K8 service account with google service account
+     kubectl annotate serviceaccount my-app-service-account \
+    iam.gke.io/gcp-service-account=my-app-service-account@YOUR_PROJECT_ID.iam.gserviceaccount.com
+      
+     ```
+   
+4. **Clone this repo**\
+   
+5. **Replace the service account with your own**
+     Replace the service account name given in cronjob/pushpreds-cronjob.yaml with your own.
+
+6. **Deploy Application**
    ```bash
    # Use deployment script
    ./deploy.sh
    ```
+
+7. **Get external IP of frontend-service**
+     ```bash
+     # Use deployment script
+     kubectl get svc
+     ```
+     Copy and paste the external IP in your browser to open the web-app
+
+8. **Connect to the web-app**
+   ```bash
+   # Get frontend External IP
+   kubectl get svc
+   ```
+   Copy and paste the external IP of frontend-service to the browser to connect to the app.
 
 ## Technology Stack
 
